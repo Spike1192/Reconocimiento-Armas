@@ -1,0 +1,26 @@
+{
+  "original_image": "C:\\Users\\edins\\OneDrive\\Documentos\\proyecto_integrador\\Reconocimiento-placas-backend\\deteccion_armas.v1i.yolov8\\train\\images\\images_jpg.rf.6c0d0af3b47222ab0cdf71a24f72abe6.jpg",
+  "detections": [
+    {
+      "bbox": [
+        24,
+        23,
+        157,
+        210
+      ],
+      "confidence": 0.8604490160942078,
+      "class_id": 1,
+      "class_name": "knife"
+    }
+  ],
+  "summary": {
+    "weapons_detected": 1,
+    "alert_level": "high",
+    "message": "ALERTA ALTA: 1 armas detectadas",
+    "max_confidence": 0.8604490160942078,
+    "detection_types": [
+      "knife"
+    ]
+  },
+  "timestamp": "1750125751.6191742"
+}

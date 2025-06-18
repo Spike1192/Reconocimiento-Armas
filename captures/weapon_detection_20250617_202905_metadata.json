@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-06-17T20:29:05.896692",
+  "detections": [
+    {
+      "bbox": [
+        0,
+        35,
+        205,
+        480
+      ],
+      "class_id": 0,
+      "class_name": "gun",
+      "confidence": 0.23433463275432587
+    },
+    {
+      "bbox": [
+        586,
+        36,
+        639,
+        186
+      ],
+      "class_id": 0,
+      "class_name": "gun",
+      "confidence": 0.23139210045337677
+    },
+    {
+      "bbox": [
+        273,
+        0,
+        628,
+        475
+      ],
+      "class_id": 0,
+      "class_name": "gun",
+      "confidence": 0.15596188604831696
+    },
+    {
+      "bbox": [
+        586,
+        43,
+        639,
+        279
+      ],
+      "class_id": 0,
+      "class_name": "gun",
+      "confidence": 0.12302124500274658
+    }
+  ],
+  "total_weapons": 4
+}
