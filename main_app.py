@@ -271,9 +271,30 @@ def main():
     app.setApplicationVersion("1.0")
     app.setOrganizationName("Proyecto Integrador")
     
-    # Crear y mostrar ventana principal
-    window = MainApp()
-    window.show()
+    # Abrir directamente el sistema de detección de armas
+    try:
+        weapons_app_path = "Vista/weapon_detection_app.py"
+        if os.path.exists(weapons_app_path):
+            print("Iniciando sistema de detección de armas...")
+            
+            # Importar y ejecutar el sistema de armas
+            from Vista.weapon_detection_app import WeaponDetectionApp
+            
+            # Crear y mostrar ventana de detección de armas
+            window = WeaponDetectionApp()
+            window.show()
+            
+        else:
+            # Si no existe el archivo de armas, mostrar menú principal
+            print("No se encontró el sistema de detección de armas, mostrando menú principal...")
+            window = MainApp()
+            window.show()
+            
+    except Exception as e:
+        print(f"Error al iniciar sistema de armas: {e}")
+        # En caso de error, mostrar menú principal
+        window = MainApp()
+        window.show()
     
     # Ejecutar aplicación
     sys.exit(app.exec_())
