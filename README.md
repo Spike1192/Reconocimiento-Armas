@@ -1,93 +1,73 @@
-Manual de Usuario
-Descripción General
-Esta aplicación es un sistema de Reconocimiento de Placas Vehiculares que permite la detección en tiempo real de placas de automóviles mediante video en vivo. Las imágenes capturadas se almacenan en una base de datos junto con la información de la placa, y son mostradas en una interfaz gráfica minimalista e intuitiva.
+# Sistema de Detección de Armas con YOLOv8
 
-Características Principales
-Detección en Tiempo Real de placas vehiculares mediante video.
-Almacenamiento de Capturas en una base de datos MySQL.
-Visualización de las capturas en una lista de tarjetas.
-Interfaz Minimalista: Visualización clara y sencilla de las imágenes detectadas.
-Detalle de Captura: Posibilidad de visualizar una imagen en tamaño grande con más detalles.
-Requisitos Previos:
--Python instalado (versión 3.7 o superior).
--MySQL instalado y configurado.
-Dependencias necesarias instaladas:
-bash
-Copiar código
-pip install PyQt5 pymysql opencv-python
-Base de Datos creada en MySQL con la tabla Informacion:
-sql
-Copiar código
-CREATE DATABASE placas;
-USE placas;
+Este proyecto es una aplicación de escritorio desarrollada en Python con PyQt5 para la detección de armas en tiempo real utilizando el modelo YOLOv8. El sistema analiza un flujo de video (cámara en vivo o archivo de video) y resalta las armas detectadas, guardando capturas y registrando la información en una base de datos.
 
-CREATE TABLE Informacion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    num_placa VARCHAR(20) NOT NULL UNIQUE,
-    imagen VARCHAR(255) NOT NULL,
-    hora DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-Instalación
-Clona el repositorio en tu máquina local:
-bash
-Copiar código
-git clone https://github.com/tu-usuario/tu-repositorio.git
-Navega al directorio del proyecto:
-bash
-Copiar código
-cd tu-repositorio
-Instala las dependencias requeridas:
-bash
-Copiar código
+## 🚀 Características Principales
+
+- **Detección en Tiempo Real**: Utiliza YOLOv8 para analizar flujos de video y detectar armas con alta precisión.
+- **Interfaz Gráfica Intuitiva**: Desarrollada con PyQt5, permite una fácil interacción y visualización de los resultados.
+- **Selección de Fuente de Video**: Permite al usuario elegir entre una cámara en vivo, un archivo de video o una imagen estática.
+- **Registro de Eventos**: Guarda un registro de cada detección, incluyendo una captura de pantalla y metadatos (fecha, hora, tipo de arma).
+- **Exportación de Datos**: Permite exportar los registros de detección a archivos CSV o PDF.
+- **Visualización de Capturas**: Muestra una galería de las capturas de armas detectadas.
+- **Alertas Configurables**: Sistema de alertas visuales en la interfaz cuando se detecta un arma.
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Python 3.7+**
+- **PyQt5**: Para la interfaz gráfica de usuario.
+- **OpenCV**: Para el procesamiento de imágenes y video.
+- **Ultralytics (YOLOv8)**: Para el modelo de detección de objetos.
+- **PyMySQL**: Para la conexión con la base de datos MySQL (si se utiliza).
+- **Pandas**: Para la manipulación y exportación de datos.
+
+## 📦 Instalación y Configuración
+
+Sigue estos pasos para poner en marcha el proyecto en tu máquina local.
+
+### 1. Clonar el Repositorio
+
+```bash
+git clone https://github.com/Spike1192/Reconocimiento-Armas.git
+cd Reconocimiento-Armas
+```
+
+### 2. Crear y Activar un Entorno Virtual
+
+Es altamente recomendable crear un entorno virtual para aislar las dependencias del proyecto.
+
+```bash
+# Crear el entorno virtual
+python -m venv venv
+
+# Activar en Windows
+.\venv\Scripts\activate
+
+# Activar en macOS/Linux
+source venv/bin/activate
+```
+
+### 3. Instalar Dependencias
+
+Instala todas las librerías necesarias utilizando el archivo `requirements.txt`.
+
+```bash
 pip install -r requirements.txt
-Configura la conexión a la base de datos en db/main.py:
-python
-Copiar código
-connection = pymysql.connect(
-    host= "localhost",
-    user= "root",
-    password= "",
-    db="placas"
-)
-Uso de la Aplicación
-1. Inicio del Programa
-Para iniciar la aplicación, abre la terminal en la carpeta del proyecto y ejecuta el siguiente comando:
+```
 
-bash
-Copiar código
-python interfaz_grafica.py
-Esto abrirá la interfaz gráfica con las siguientes secciones:
+## ▶️ Cómo Ejecutar la Aplicación
 
-2. Interfaz Gráfica
-La interfaz está dividida en dos partes principales:
+Una vez que hayas completado la instalación, puedes iniciar la aplicación con el siguiente comando:
 
-Izquierda - Lista de Capturas
-Aquí se mostrarán todas las capturas guardadas de los vehículos.
-Cada captura se muestra en una carta, con el título de la placa detectada.
-Las capturas nuevas se añaden automáticamente cuando se detecta una placa en tiempo real.
-Derecha - Video en Tiempo Real
-Aquí se muestra la detección en tiempo real del video.
-Cada vez que se detecta una placa, se guarda una captura si aún no ha sido registrada.
-3. Visualizar Detalles de una Captura
-Haz clic en cualquiera de las tarjetas en la lista de la izquierda para abrir una ventana secundaria.
-La ventana mostrará la imagen capturada en tamaño grande, junto con el nombre de la placa.
-En la parte inferior, hay un botón de "Volver" que te permitirá regresar a la vista principal.
-Funcionalidades del Programa
-Detección en Tiempo Real
-El sistema detecta las placas en tiempo real a través de la cámara o un archivo de video.
-Las placas detectadas son almacenadas junto con una captura del vehículo en la base de datos MySQL.
-Almacenamiento en Base de Datos
-Cada captura contiene la información de la placa y se guarda en la base de datos con los siguientes campos:
-num_placa: Número de la placa detectada.
-imagen: Ruta a la imagen capturada.
-hora: Fecha y hora de la detección.
-Visualización de Capturas
-Las capturas almacenadas se visualizan en tarjetas en la parte izquierda de la interfaz.
-Cada tarjeta contiene:
-Una imagen en miniatura del vehículo capturado.
-El número de la placa del vehículo.
-Controles de la Aplicación
-Atajos de Teclado
-Esc: Cierra la ventana del programa.
-Clic en Tarjeta: Abre la imagen en tamaño grande.
-Botón Volver: Cierra la vista detallada de la captur
+```bash
+python main_app.py
+```
+
+Esto abrirá directamente la interfaz del sistema de detección de armas.
+
+## 📖 Uso de la Aplicación
+
+1.  **Seleccionar Fuente**: Al iniciar la aplicación, utiliza los botones para seleccionar si deseas analizar una imagen, un video desde un archivo o la cámara en vivo.
+2.  **Iniciar Detección**: Una vez seleccionada la fuente, el sistema comenzará a analizar el contenido en busca de armas.
+3.  **Visualizar Resultados**: Las detecciones se mostrarán en tiempo real en el visor de video. Las capturas de las detecciones se añadirán a la galería.
+4.  **Exportar Datos**: Utiliza los botones correspondientes para exportar el historial de detecciones a un archivo CSV o PDF.
