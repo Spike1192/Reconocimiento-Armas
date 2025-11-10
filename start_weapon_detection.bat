@@ -36,7 +36,7 @@ REM Ejecutar el sistema
 echo.
 echo Iniciando sistema de deteccion de armas...
 echo.
-python Vista\weapon_detection_app.py
+python main_app.py
 
 REM Si hay error, mostrar mensaje
 if errorlevel 1 (

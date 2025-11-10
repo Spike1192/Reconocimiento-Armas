@@ -58,7 +58,7 @@ def test_camera_detection(detector):
     """Prueba con cámara web"""
     print("Iniciando cámara web...")
     
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     if not cap.isOpened():
         print("✗ No se pudo abrir la cámara web")
         return

@@ -17,8 +17,8 @@ class WeaponDetector:
         self.weapon_classes = ['gun', 'knife', 'sword']
         
         # Obtener ruta absoluta al modelo entrenado
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        default_model_path = os.path.join(BASE_DIR, "computer_vision_models", "models", "best.pt")
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        default_model_path = os.path.join(BASE_DIR, "runs", "detect", "train9", "weights", "best.pt")
         
         # Cargar modelo con mensajes de depuración
         if model_path and os.path.exists(model_path):

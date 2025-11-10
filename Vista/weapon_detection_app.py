@@ -25,7 +25,7 @@ class VideoThread(QThread):
         self.detection_enabled = True
         
     def run(self):
-        self.cap = cv2.VideoCapture(0)  # Cámara web
+        self.cap = cv2.VideoCapture(1)# Cámara web
         self.running = True
         
         while self.running:
