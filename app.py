@@ -35,7 +35,9 @@ def init_db():
         print("Base de datos inicializada")
 
 def generate_frames():
-    """Generar frames de video con detección"""
+    """Generar frames de video con detección optimizado para 20 FPS"""
+    import time
+    
     global camera, camera_running, detection_enabled, weapon_detector
     
     if camera is None:
@@ -43,43 +45,95 @@ def generate_frames():
         if not camera.isOpened():
             print("Error: No se pudo abrir la cámara")
             return
+        
+        # Configurar buffer de cámara para reducir latencia
+        camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     
     camera_running = True
     
+    # Control de FPS (20 FPS = 0.05 segundos por frame)
+    target_fps = 30
+    frame_time = 1.0 / target_fps
+    last_frame_time = time.time()
+    
+    # Variables para procesamiento optimizado de detección
+    frame_count = 0
+    detection_frame_skip = 3  # Procesar detección cada 3 frames para mantener FPS
+    last_detections = []
+    last_annotated_frame = None
+    
     while camera_running:
+        current_time = time.time()
+        elapsed = current_time - last_frame_time
+        
+        # Control de FPS: esperar si es necesario
+        if elapsed < frame_time:
+            time.sleep(frame_time - elapsed)
+        
         ret, frame = camera.read()
         if not ret:
-            break
+            # Si falla la lectura, intentar reconectar
+            time.sleep(0.1)
+            continue
         
-        if detection_enabled:
-            # Realizar detección
-            results, detections = weapon_detector.detect_weapons(frame)
-            
-            # Dibujar detecciones
-            annotated_frame = weapon_detector.draw_detections(frame, detections)
-            
-            # Enviar alerta si hay detecciones
-            if detections:
-                summary = weapon_detector.get_detection_summary(detections)
-                socketio.emit('weapon_detected', {
-                    'detections': detections,
-                    'summary': summary,
-                    'timestamp': datetime.now().isoformat()
-                })
+        frame_count += 1
+        
+        # Procesar detección solo en ciertos frames para mantener FPS fluido
+        if detection_enabled and frame_count % detection_frame_skip == 0:
+            # Realizar detección (esto puede ser lento, pero solo cada 3 frames)
+            try:
+                results, detections = weapon_detector.detect_weapons(frame)
+                last_detections = detections
                 
-                # Guardar en base de datos
-                save_detection_to_db(detections, summary, annotated_frame)
+                # Dibujar detecciones
+                annotated_frame = weapon_detector.draw_detections(frame.copy(), detections)
+                last_annotated_frame = annotated_frame
+                
+                # Enviar alerta si hay detecciones (en thread separado)
+                if detections:
+                    summary = weapon_detector.get_detection_summary(detections)
+                    socketio.emit('weapon_detected', {
+                        'detections': detections,
+                        'summary': summary,
+                        'timestamp': datetime.now().isoformat()
+                    })
+                    
+                    # Guardar en base de datos en thread separado para no bloquear
+                    threading.Thread(
+                        target=save_detection_to_db,
+                        args=(detections, summary, annotated_frame),
+                        daemon=True
+                    ).start()
+            except Exception as e:
+                print(f"Error en detección: {e}")
+                annotated_frame = frame
+        elif detection_enabled and last_annotated_frame is not None and last_detections:
+            # Usar último frame con detecciones mientras se procesa el nuevo
+            # Aplicar detecciones del frame anterior al frame actual
+            annotated_frame = weapon_detector.draw_detections(frame.copy(), last_detections)
         else:
             annotated_frame = frame
         
-        # Codificar frame como JPEG
-        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        # Redimensionar frame para mejor rendimiento de streaming (si es muy grande)
+        height, width = annotated_frame.shape[:2]
+        if width > 1280:
+            scale = 1280 / width
+            new_width = 1280
+            new_height = int(height * scale)
+            annotated_frame = cv2.resize(annotated_frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+        
+        # Codificar frame como JPEG con calidad optimizada para streaming
+        ret, buffer = cv2.imencode('.jpg', annotated_frame, [
+            cv2.IMWRITE_JPEG_QUALITY, 80  # Calidad balanceada para buen FPS
+        ])
         if not ret:
             continue
         
         frame_bytes = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        
+        last_frame_time = time.time()
 
 def save_detection_to_db(detections, summary, frame):
     """Guardar detección en base de datos"""
