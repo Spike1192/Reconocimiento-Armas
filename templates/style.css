@@ -1,0 +1,19 @@
+.login-bg {
+  /* Tres SVG como fondo */
+  background-image: url('/svg/BG.svg'), url('/svg/Ellipse.svg'), url('/svg/Ellipse1.svg');
+
+  background-position: 
+    right 0px bottom 0px,    /* BG1: 20px desde la derecha, 40px desde abajo */
+    left 0px bottom 0px,        /* BG2: 50px desde la izquierda, 30px desde arriba */
+    left 0px top 0px;
+
+  /* Repetición de cada SVG */
+  background-repeat: no-repeat, no-repeat, no-repeat;
+
+
+  /* Tamaño de cada SVG */
+  background-size: 480px, 150px, 300px;
+
+  /* Color de fondo unicolor */
+  background-color: #0A0F1F;
+}
