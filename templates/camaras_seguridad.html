@@ -17,11 +17,15 @@
             <h1></h1>
             <div class="flex gap-5 px-4">
                 <!-- campana -->
-                <svg id="btnNotifications" class="w-6 h-6 cursor-pointer hover:opacity-70" fill="none"
-                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
+                <div class="relative">
+                    <svg id="btnNotifications" class="w-6 h-6 cursor-pointer hover:opacity-70" fill="none"
+                        stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <!-- Círculo rojo de notificación -->
+                    <span id="notificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full hidden flex items-center justify-center text-white text-[10px] font-bold"></span>
+                </div>
 
                 <!-- usuario -->
                 <svg id="btnPerfil" class="w-6 h-6 cursor-pointer hover:opacity-70" fill="none" stroke="currentColor"
@@ -42,25 +46,9 @@
             </div>
 
             <!-- Lista -->
-            <div class="p-4 flex flex-col gap-4">
-
-                <!-- Item -->
-                <div class="flex items-center gap-4 bg-[#13244a] p-4 rounded-lg cursor-pointer hover:bg-[#1b3260]">
-                    <div class="w-8 h-8 flex items-center justify-center bg-black/40 rounded-full">
-                        ▶
-                    </div>
-                    <p class="text-white text-sm">14/2/2025 – 1:37</p>
-                </div>
-
-                <div class="flex items-center gap-4 bg-[#13244a] p-4 rounded-lg cursor-pointer hover:bg-[#1b3260]">
-                    <div class="w-8 h-8 flex items-center justify-center bg-black/40 rounded-full">
-                        ▶
-                    </div>
-                    <p class="text-white text-sm">22/3/2025 – 1:12</p>
-                </div>
-
-                <!-- ... repite más items -->
-
+            <div id="notificationList" class="p-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+                <!-- Las notificaciones se agregarán aquí dinámicamente -->
+                <p class="text-white/70 text-center py-4" id="noNotifications">No hay notificaciones</p>
             </div>
         </div>
     </header>
@@ -184,7 +172,7 @@
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Nombre</span>
+                    <span class="text-white/90 text-[16px]">Nombre: <span id="perfilNombre" class="font-semibold"></span></span>
                 </div>
 
                 <div
@@ -195,7 +183,7 @@
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Usuario</span>
+                    <span class="text-white/90 text-[16px]">Usuario: <span id="perfilUsuario" class="font-semibold"></span></span>
                 </div>
 
                 <div
@@ -204,7 +192,7 @@
                         <rect x="3" y="5" width="18" height="14" rx="2" />
                         <path d="M3 7l9 6 9-6" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Email</span>
+                    <span class="text-white/90 text-[16px]">Email: <span id="perfilEmail" class="font-semibold"></span></span>
                 </div>
 
                 <div
@@ -213,7 +201,7 @@
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <circle cx="12" cy="10" r="3" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Ubicación asignada</span>
+                    <span class="text-white/90 text-[16px]">Ubicación asignada: <span id="perfilUbicacion" class="font-semibold"></span></span>
                 </div>
 
                 <div
@@ -222,7 +210,7 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Rol</span>
+                    <span class="text-white/90 text-[16px]">Rol: <span id="perfilRol" class="font-semibold"></span></span>
                 </div>
 
                 <div
@@ -231,18 +219,18 @@
                         <path
                             d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                     </svg>
-                    <span class="text-white/90 text-[16px]">Teléfono de contacto</span>
+                    <span class="text-white/90 text-[16px]">Teléfono de contacto: <span id="perfilTelefono" class="font-semibold"></span></span>
                 </div>
 
             </div>
 
             <!-- Último inicio -->
-            <p class="text-white/70 text-[14px] mb-4">
-                Último inicio de sesión: 05/06/2025 – 08:47 a.m.
+            <p class="text-white/70 text-[14px] mb-4" id="perfilUltimoAcceso">
+                Último inicio de sesión: No disponible
             </p>
 
-            <!-- Botón -->
-            <button id="btnRegistro"
+            <!-- Botón (oculto - sistema sin registro) -->
+            <button id="btnRegistro" style="display: none;"
                 class="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[16px] font-medium transition transform hover:-translate-y-[1px]">
                 Crear nuevo usuario
             </button>
@@ -362,23 +350,25 @@
             <div class="h-[85%]">
 
 
-                <div class="relative bg-[#1a2332] border border-[#2d3e50] rounded-lg shadow-xl overflow-hidden">
-
+                <div class="relative bg-[#1a2332] border border-[#2d3e50] rounded-lg shadow-xl overflow-hidden" id="videoContainerAmpliado">
 
                     <span
-                        class="absolute top-2 left-2 bg-black/70 text-green-400 text-[11px] px-2 py-1 rounded font-mono">
+                        class="absolute top-2 left-2 bg-black/70 text-green-400 text-[11px] px-2 py-1 rounded font-mono z-10" id="horaVideoAmpliado">
                         03:15:20
                     </span>
 
-
                     <span
-                        class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono font-semibold">
+                        class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded font-mono font-semibold z-10" id="nombreCamaraAmpliado">
                         CAMERA 01
                     </span>
 
+                    <!-- Video feed se mostrará aquí cuando sea CAMERA 01 -->
+                    <div id="videoFeedAmpliado" class="w-full h-full" style="display: none;">
+                        <img src="/video_feed" alt="Video Feed" class="w-full h-full object-cover" id="imgVideoFeedAmpliado">
+                    </div>
 
-                    <div
-                        class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a3a2e] to-[#0f2419]">
+                    <!-- Placeholder para cámaras estáticas -->
+                    <div id="videoPlaceholder" class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a3a2e] to-[#0f2419]">
                         <svg class="w-16 h-[382px] opacity-20" viewBox="0 0 24 24" fill="none" stroke="#00ff00"
                             stroke-width="1.5">
                             <path d="M23 7l-7 5 7 5V7z"></path>
@@ -519,6 +509,7 @@
     </section>
 
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/script.js"></script>
 </body>
 

@@ -3,7 +3,7 @@
 Aplicación Flask principal para el Sistema de Detección de Armas
 """
 
-from flask import Flask, render_template, Response, jsonify, request, send_from_directory
+from flask import Flask, render_template, Response, jsonify, request, send_from_directory, session
 from flask_socketio import SocketIO, emit
 import cv2
 import os
@@ -11,9 +11,10 @@ import base64
 import threading
 from datetime import datetime
 import json
+from functools import wraps
 
 from config import Config
-from models import db, WeaponDetection
+from models import db, WeaponDetection, Usuario, Alerta
 from process.weapon_detection import WeaponDetector
 
 app = Flask(__name__)
@@ -33,6 +34,20 @@ def init_db():
     with app.app_context():
         db.create_all()
         print("Base de datos inicializada")
+        
+        # Crear usuarios predefinidos si no existen
+        if not Usuario.query.first():
+            from init_db import crear_usuarios_predefinidos
+            crear_usuarios_predefinidos()
+
+def login_required(f):
+    """Decorador para proteger rutas que requieren autenticación"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'No autenticado'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
 
 def generate_frames():
     """Generar frames de video con detección optimizado para 20 FPS"""
@@ -92,16 +107,24 @@ def generate_frames():
                 # Enviar alerta si hay detecciones (en thread separado)
                 if detections:
                     summary = weapon_detector.get_detection_summary(detections)
-                    socketio.emit('weapon_detected', {
-                        'detections': detections,
-                        'summary': summary,
-                        'timestamp': datetime.now().isoformat()
-                    })
                     
                     # Guardar en base de datos en thread separado para no bloquear
+                    # Y luego emitir notificación con el ID de la alerta
+                    def save_and_notify():
+                        alerta_id = save_detection_to_db(detections, summary, annotated_frame)
+                        if alerta_id:
+                            # Emitir notificación a todos los clientes conectados
+                            socketio.emit('weapon_detected', {
+                                'alerta_id': alerta_id,
+                                'detections': detections,
+                                'summary': summary,
+                                'tipo_alerta': f"Detección de {summary['weapons_detected']} arma(s)",
+                                'timestamp': datetime.now().isoformat(),
+                                'camara': 'CAMERA 01'
+                            })
+                    
                     threading.Thread(
-                        target=save_detection_to_db,
-                        args=(detections, summary, annotated_frame),
+                        target=save_and_notify,
                         daemon=True
                     ).start()
             except Exception as e:
@@ -136,47 +159,191 @@ def generate_frames():
         last_frame_time = time.time()
 
 def save_detection_to_db(detections, summary, frame):
-    """Guardar detección en base de datos"""
+    """Guardar detección como alerta en base de datos y retornar el ID de la alerta"""
     try:
-        # Guardar imagen
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        os.makedirs("captures", exist_ok=True)
-        image_path = f"captures/weapon_detection_{timestamp}.jpg"
-        cv2.imwrite(image_path, frame)
-        
-        # Guardar metadatos
-        metadata = {
-            'detections': detections,
-            'summary': summary
-        }
-        
-        # Crear registro en base de datos
-        detection = WeaponDetection(
-            weapon_count=summary['weapons_detected'],
-            alert_level=summary['alert_level'],
-            detection_types=', '.join(summary['detection_types']),
-            image_path=image_path,
-            detection_metadata=json.dumps(metadata)
-        )
-        
-        db.session.add(detection)
-        db.session.commit()
+        with app.app_context():
+            # Guardar imagen
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            os.makedirs("captures", exist_ok=True)
+            image_path = f"captures/weapon_detection_{timestamp}.jpg"
+            cv2.imwrite(image_path, frame)
+            
+            # Guardar metadatos
+            metadata = {
+                'detections': detections,
+                'summary': summary
+            }
+            
+            # Determinar tipo de alerta según el nivel
+            tipo_alerta = f"Detección de {summary['weapons_detected']} arma(s)"
+            if summary['alert_level'] == 'high':
+                tipo_alerta = f"ALERTA ALTA: {summary['weapons_detected']} arma(s) detectada(s)"
+            elif summary['alert_level'] == 'medium':
+                tipo_alerta = f"ALERTA MEDIA: {summary['weapons_detected']} arma(s) detectada(s)"
+            
+            # Crear alerta en base de datos
+            alerta = Alerta(
+                tipoAlerta=tipo_alerta,
+                fechaHora=datetime.utcnow(),
+                camara='CAMERA 01',
+                weapon_count=summary['weapons_detected'],
+                alert_level=summary['alert_level'],
+                detection_types=', '.join(summary['detection_types']),
+                image_path=image_path,
+                detection_metadata=json.dumps(metadata),
+                motivo=f"Detección de {', '.join(summary['detection_types'])} en {summary['weapons_detected']} ubicación(es)",
+                solucion='Pendiente de revisión'
+            )
+            
+            db.session.add(alerta)
+            db.session.commit()
+            
+            # Obtener el ID de la alerta recién creada
+            alerta_id = alerta.idAlerta
+            
+            # También guardar en WeaponDetection para compatibilidad
+            detection = WeaponDetection(
+                weapon_count=summary['weapons_detected'],
+                alert_level=summary['alert_level'],
+                detection_types=', '.join(summary['detection_types']),
+                image_path=image_path,
+                detection_metadata=json.dumps(metadata)
+            )
+            db.session.add(detection)
+            db.session.commit()
+            
+            print(f"Alerta guardada: {tipo_alerta} - ID: {alerta_id} - {image_path}")
+            return alerta_id
         
     except Exception as e:
         print(f"Error guardando detección: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 @app.route('/')
 def index():
     """Página principal"""
-    return render_template('index.html')
+    return render_template('camaras_seguridad.html')
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Autenticar usuario según el modelo UML"""
+    try:
+        data = request.get_json()
+        usuario = data.get('usuario', '').strip()
+        clave = data.get('clave', '').strip()
+        
+        if not usuario or not clave:
+            return jsonify({'error': 'Usuario y contraseña son requeridos'}), 400
+        
+        # Buscar usuario en la base de datos
+        user = Usuario.query.filter_by(idUsuario=usuario).first()
+        
+        if not user:
+            return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+        
+        # Autenticar usando el método del modelo UML
+        if not user.autenticar(clave):
+            return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+        
+        # Registrar ingreso al sistema (método del UML)
+        user.ingreso_sistema()
+        db.session.commit()
+        
+        # Crear sesión
+        session['user_id'] = user.idUsuario
+        session['user_name'] = user.Nombre
+        session.permanent = True
+        
+        return jsonify({
+            'success': True,
+            'usuario': user.to_dict(),
+            'message': 'Login exitoso'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error en el servidor: {str(e)}'}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Cerrar sesión"""
+    session.clear()
+    return jsonify({'success': True, 'message': 'Sesión cerrada'})
+
+@app.route('/api/check_session', methods=['GET'])
+def check_session():
+    """Verificar si hay una sesión activa"""
+    if 'user_id' in session:
+        user = Usuario.query.filter_by(idUsuario=session['user_id']).first()
+        if user:
+            return jsonify({
+                'authenticated': True,
+                'usuario': user.to_dict()
+            })
+    
+    return jsonify({'authenticated': False}), 401
+
+@app.route('/api/user/profile', methods=['GET'])
+@login_required
+def get_user_profile():
+    """Obtener perfil del usuario autenticado"""
+    user = Usuario.query.filter_by(idUsuario=session['user_id']).first()
+    if user:
+        return jsonify(user.to_dict())
+    return jsonify({'error': 'Usuario no encontrado'}), 404
+
+@app.route('/api/alertas', methods=['GET'])
+@login_required
+def get_alertas():
+    """Obtener todas las alertas"""
+    try:
+        alertas = Alerta.query.order_by(
+            Alerta.fechaHora.desc()
+        ).limit(100).all()
+        
+        result = [alerta.to_dict() for alerta in alertas]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/alerta/<int:alerta_id>', methods=['GET'])
+@login_required
+def get_alerta(alerta_id):
+    """Obtener detalles de una alerta específica"""
+    try:
+        alerta = Alerta.query.get_or_404(alerta_id)
+        return jsonify(alerta.to_dict())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/alerta/<int:alerta_id>', methods=['PUT'])
+@login_required
+def update_alerta(alerta_id):
+    """Actualizar motivo y solución de una alerta"""
+    try:
+        alerta = Alerta.query.get_or_404(alerta_id)
+        data = request.get_json()
+        
+        if 'motivo' in data:
+            alerta.motivo = data['motivo']
+        if 'solucion' in data:
+            alerta.solucion = data['solucion']
+        
+        db.session.commit()
+        return jsonify(alerta.to_dict())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/video_feed')
+@login_required
 def video_feed():
     """Stream de video"""
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/api/detections')
+@login_required
 def get_detections():
     """Obtener historial de detecciones"""
     try:
@@ -200,6 +367,7 @@ def get_detections():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/stats')
+@login_required
 def get_stats():
     """Obtener estadísticas"""
     try:
@@ -220,6 +388,7 @@ def get_stats():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/detection/<int:detection_id>')
+@login_required
 def get_detection(detection_id):
     """Obtener detalles de una detección"""
     try:
@@ -237,6 +406,7 @@ def get_detection(detection_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/toggle_detection', methods=['POST'])
+@login_required
 def toggle_detection():
     """Activar/desactivar detección"""
     global detection_enabled
@@ -245,6 +415,7 @@ def toggle_detection():
     return jsonify({'enabled': detection_enabled})
 
 @app.route('/api/update_confidence', methods=['POST'])
+@login_required
 def update_confidence():
     """Actualizar umbral de confianza"""
     data = request.get_json()
@@ -256,6 +427,21 @@ def update_confidence():
 def serve_capture(filename):
     """Servir imágenes capturadas"""
     return send_from_directory('captures', filename)
+
+@app.route('/script.js')
+def serve_script():
+    """Servir script.js desde templates"""
+    return send_from_directory('templates', 'script.js', mimetype='application/javascript')
+
+@app.route('/style.css')
+def serve_style():
+    """Servir style.css desde templates"""
+    return send_from_directory('templates', 'style.css', mimetype='text/css')
+
+@app.route('/svg/<path:filename>')
+def serve_svg(filename):
+    """Servir archivos SVG desde templates/svg"""
+    return send_from_directory('templates/svg', filename, mimetype='image/svg+xml')
 
 @socketio.on('connect')
 def handle_connect():
