@@ -637,10 +637,7 @@ btnEventos.addEventListener("click", async () => {
 const listaCamaras = [
   { hora: "03:15:20", camara: "CAMERA 01", activa: true },
   { hora: "03:15:20", camara: "CAMERA 02", activa: false },
-  { hora: "03:15:20", camara: "CAMERA 03", activa: false },
-  { hora: "03:15:20", camara: "CAMERA 04", activa: false },
-  { hora: "03:15:20", camara: "CAMERA 05", activa: false },
-  { hora: "03:15:20", camara: "CAMERA 06", activa: false }
+  { hora: "03:15:20", camara: "CAMERA 03", activa: false }
 ];
 
 
