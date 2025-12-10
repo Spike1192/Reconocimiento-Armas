@@ -114,8 +114,7 @@ Modelo que almacena el historial de detecciones de armas (compatibilidad).
 
 ---
 
-## 🔌 Arquitectura de la API
-
+## Arquitectura de la API
 ### Framework: Flask
 
 La aplicación utiliza **Flask** como framework web, proporcionando:
@@ -135,236 +134,56 @@ La API sigue un patrón **RESTful** con los siguientes componentes:
 - **Decorador `@login_required`**: Protección de rutas que requieren autenticación
 - **Sesiones Permanentes**: Duración de 24 horas
 
-#### 2. **Endpoints REST**
 
-Todos los endpoints devuelven respuestas en formato **JSON**.
-
----
-
-## 📡 Endpoints de la API
-
-### Autenticación
 
 #### `POST /api/login`
 Autentica un usuario en el sistema.
 
-**Request Body:**
-```json
-{
-  "usuario": "admin",
-  "clave": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "usuario": {
-    "idUsuario": "admin",
-    "Nombre": "Administrador",
-    "Email": "admin@example.com",
-    "Rol": "Administrador",
-    ...
-  },
-  "message": "Login exitoso"
-}
-```
-
 #### `POST /api/logout`
 Cierra la sesión del usuario actual.
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Sesión cerrada"
-}
-```
 
 #### `GET /api/check_session`
 Verifica si hay una sesión activa.
 
-**Response (200):**
-```json
-{
-  "authenticated": true,
-  "usuario": { ... }
-}
-```
 
 ### Gestión de Usuarios
 
 #### `GET /api/user/profile`
 Obtiene el perfil del usuario autenticado.
 
-**Requisitos:** Autenticación requerida
 
-**Response (200):**
-```json
-{
-  "idUsuario": "admin",
-  "Nombre": "Administrador",
-  ...
-}
-```
 
 ### Gestión de Alertas
 
 #### `GET /api/alertas`
 Obtiene todas las alertas (últimas 100).
 
-**Requisitos:** Autenticación requerida
-
-**Response (200):**
-```json
-[
-  {
-    "idAlerta": 1,
-    "tipoAlerta": "ALERTA ALTA: 2 arma(s) detectada(s)",
-    "fechaHora": "2024-01-15T10:30:00",
-    "camara": "CAMERA 01",
-    "weapon_count": 2,
-    "alert_level": "high",
-    ...
-  },
-  ...
-]
-```
-
-#### `GET /api/alerta/<alerta_id>`
+### `GET /api/alerta/<alerta_id>`
 Obtiene los detalles de una alerta específica.
-
-**Requisitos:** Autenticación requerida
-
-**Response (200):**
-```json
-{
-  "idAlerta": 1,
-  "tipoAlerta": "...",
-  ...
-}
-```
 
 #### `PUT /api/alerta/<alerta_id>`
 Actualiza el motivo y solución de una alerta.
 
-**Requisitos:** Autenticación requerida
-
-**Request Body:**
-```json
-{
-  "motivo": "Detección confirmada",
-  "solucion": "Se contactó a seguridad"
-}
-```
-
-**Response (200):**
-```json
-{
-  "idAlerta": 1,
-  "motivo": "Detección confirmada",
-  "solucion": "Se contactó a seguridad",
-  ...
-}
-```
 
 ### Detecciones
 
 #### `GET /api/detections`
 Obtiene el historial de detecciones (últimas 50).
 
-**Requisitos:** Autenticación requerida
-
-**Response (200):**
-```json
-[
-  {
-    "id": 1,
-    "timestamp": "2024-01-15T10:30:00",
-    "weapon_count": 2,
-    "alert_level": "high",
-    ...
-  },
-  ...
-]
-```
-
 #### `GET /api/detection/<detection_id>`
 Obtiene los detalles de una detección específica.
-
-**Requisitos:** Autenticación requerida
 
 #### `GET /api/stats`
 Obtiene estadísticas del sistema.
 
-**Requisitos:** Autenticación requerida
-
-**Response (200):**
-```json
-{
-  "total": 150,
-  "high_alerts": 25,
-  "medium_alerts": 50
-}
-```
-
 ### Control del Sistema
-
 #### `POST /api/toggle_detection`
+
 Activa/desactiva la detección de armas.
-
-**Requisitos:** Autenticación requerida
-
-**Request Body:**
-```json
-{
-  "enabled": true
-}
-```
-
 #### `POST /api/update_confidence`
 Actualiza el umbral de confianza para las detecciones.
 
-**Requisitos:** Autenticación requerida
 
-**Request Body:**
-```json
-{
-  "confidence": 0.6
-}
-```
-
-### Streaming de Video
-
-#### `GET /video_feed`
-Stream de video en tiempo real con detección de armas.
-
-**Requisitos:** Autenticación requerida
-
-**Response:** Stream MJPEG (multipart/x-mixed-replace)
-
-**Características:**
-- FPS objetivo: 30 FPS
-- Procesamiento de detección cada 3 frames (para mantener rendimiento)
-- Calidad JPEG: 80%
-- Redimensionamiento automático si el ancho > 1280px
-
-### Servicio de Archivos
-
-#### `GET /captures/<filename>`
-Sirve imágenes capturadas desde el directorio `captures/`.
-
-#### `GET /script.js`
-Sirve el archivo JavaScript principal.
-
-#### `GET /style.css`
-Sirve el archivo CSS principal.
-
-#### `GET /svg/<filename>`
-Sirve archivos SVG desde `templates/svg/`.
-
----
 
 ## 🔄 Comunicación en Tiempo Real
 
