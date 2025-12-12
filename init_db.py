@@ -90,12 +90,12 @@ def crear_usuarios_predefinidos():
             db.session.add(usuario)
         
         db.session.commit()
-        print("✓ Usuarios predefinidos creados:")
+        print("Usuarios predefinidos creados:")
         for u in usuarios_predefinidos:
             print(f"  - {u['idUsuario']} ({u['Nombre']})")
             
     except Exception as e:
-        print(f"⚠ Error al crear usuarios predefinidos: {e}")
+        print(f"Error al crear usuarios predefinidos: {e}")
         db.session.rollback()
 
 if __name__ == '__main__':
